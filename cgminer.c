@@ -1765,7 +1765,7 @@ void free_work(struct work *work)
 }
 
 static void gen_hash(unsigned char *data, unsigned char *hash, int len);
-static void gen_hashd(unsigned char *data, unsigned char *hash, int len);
+//static void gen_hashd(unsigned char *data, unsigned char *hash, int len);
 static void calc_diff(struct work *work, double known);
 char *workpadding = "000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
 
@@ -1842,7 +1842,7 @@ static unsigned char *__gbt_merkleroot(struct pool *pool)
 		for (i = 0; i < txns; i += 2){
 			unsigned char hashout[32];
 
-			gen_hashd(merkle_hash + (i * 32), hashout, 64);
+			gen_hash(merkle_hash + (i * 32), hashout, 64);
 			memcpy(merkle_hash + (i / 2 * 32), hashout, 32);
 		}
 		txns /= 2;
@@ -3254,7 +3254,9 @@ static void kill_mining(void)
 		if (pth && *pth)
 			pthread_join(*pth, NULL);
 #else
-		if (pth && pth->p)
+		/* if (pth && pth->p) 
+		* fixes a compilation failure under mingw32 from http://mxe.cc */
+		if (pth)
 			pthread_join(*pth, NULL);
 #endif
 	}
@@ -5956,16 +5958,19 @@ static struct work *hash_pop(void)
 
 static void gen_hash(unsigned char *data, unsigned char *hash, int len)
 {
-	sha256(data, len, hash);
+	unsigned char hash1[32];
+	sha256(data, len, hash1);
+	sha256(hash1, 32, hash);
 }
 
+/* not needed - was an addition for blakecoin that modified gen_hash to use a single SHA256
 static void gen_hashd(unsigned char *data, unsigned char *hash, int len)
 {
 	unsigned char hash1[32];
 
 	sha256(data, len, hash1);
 	sha256(hash1, 32, hash);
-}
+}*/
 
 void set_target(unsigned char *dest_target, double diff)
 {
@@ -6045,7 +6050,7 @@ static void gen_stratum_work(struct pool *pool, struct work *work)
 	memcpy(merkle_sha, merkle_root, 32);
 	for (i = 0; i < pool->swork.merkles; i++) {
 		memcpy(merkle_sha + 32, pool->swork.merkle_bin[i], 32);
-		gen_hashd(merkle_sha, merkle_root, 64);
+		gen_hash(merkle_sha, merkle_root, 64);
 		memcpy(merkle_sha, merkle_root, 32);
 	}
 	data32 = (uint32_t *)merkle_sha;

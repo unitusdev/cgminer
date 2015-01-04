@@ -47,7 +47,8 @@ static inline int nanosleep(const struct timespec *req, struct timespec *rem)
 }
 #endif
 
-static inline int sleep(unsigned int secs)
+// fixes a re-definition error when compiling under mingw32 from http://mxe.cc
+/*static inline int sleep(unsigned int secs)
 {
 	struct timespec req, rem;
 	req.tv_sec = secs;
@@ -55,7 +56,7 @@ static inline int sleep(unsigned int secs)
 	if (!nanosleep(&req, &rem))
 		return 0;
 	return rem.tv_sec + (rem.tv_nsec ? 1 : 0);
-}
+}*/
 
 enum {
 	PRIO_PROCESS		= 0,
